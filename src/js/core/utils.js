@@ -25,7 +25,17 @@ function hl(text,tokens){let s=esc(text);if(!tokens||!tokens.length)return s;
   let out="",last=0;m.forEach(([a,b])=>{out+=esc(text.slice(last,a))+"<mark>"+esc(text.slice(a,b))+"</mark>";last=b});return out+esc(text.slice(last))}
 
 /* ---------- data helpers ---------- */
-const P=id=>S.patients.find(p=>p.id===id);
+/* patient by id: an id -> position index, rebuilt only when the list changes
+   (the cached position is checked on every call, so adds, deletes and replacements stay correct) */
+const _pIdx={arr:null,len:-1,map:new Map(),miss:new Set()};
+function P(id){
+  const a=S.patients,fresh=_pIdx.arr===a&&_pIdx.len===a.length;
+  let i=_pIdx.arr===a?_pIdx.map.get(id):undefined;
+  if(i!==undefined&&a[i]&&a[i].id===id)return a[i];
+  if(fresh&&i===undefined&&_pIdx.miss.has(id))return undefined; // known missing (e.g. a deleted patient's old visits)
+  _pIdx.arr=a;_pIdx.len=a.length;_pIdx.map=new Map();_pIdx.miss=new Set();a.forEach((p,k)=>_pIdx.map.set(p.id,k));
+  i=_pIdx.map.get(id);if(i===undefined){_pIdx.miss.add(id);return undefined}return a[i];
+}
 const visitsOf=id=>S.visits.filter(v=>v.patientId===id).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
 const paymentsOf=id=>S.payments.filter(x=>x.patientId===id);
 function solde(id){let s=0;for(const v of S.visits)if(v.patientId===id)s+=num(v.honoraires)-num(v.recu);for(const x of S.payments)if(x.patientId===id)s-=num(x.amount);return Math.round(s*1000)/1000}

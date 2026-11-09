@@ -11,6 +11,8 @@ Tbibi replaces 2000s-era desktop software ("Mon Cabinet v2003" and similar). It 
 - Light and dark themes
 - Works offline; data stays on the doctor's computer, encrypted if the doctor sets a password
 
+**Try it online: <https://seifmannai.github.io/tbibi/>** (demo data; everything you type stays in your own browser)
+
 ## Features
 
 | Area | What the doctor gets |
@@ -33,8 +35,8 @@ Tbibi replaces 2000s-era desktop software ("Mon Cabinet v2003" and similar). It 
 
 ### For doctors
 
-1. Download `dist/tbibi.html`.
-2. Open it in a recent Chrome, Edge or Firefox (double-click).
+1. Open <https://seifmannai.github.io/tbibi/>, or download `dist/tbibi.html` and double-click it to use it with no internet.
+2. Use a recent Chrome, Edge or Firefox.
 3. Go to **Paramètres**: enter the name, specialty and address printed on documents, upload the practice logo and scanned stamp, and turn on **Sécurité → Activer le chiffrement**.
 4. Click **Recharger les données de démonstration** to explore with fake patients, or **Effacer toutes les données** to start fresh.
 
@@ -45,24 +47,21 @@ Keep the file in the same place and always open it with the same browser: the da
 Requires [Node.js](https://nodejs.org) 18 or newer.
 
 ```bash
-npm install          # only needed for the tests (Playwright)
-npm run build        # src/ -> dist/tbibi.html
-npm test             # build + 54 browser checks + screenshots in docs/screenshots/
+npm install          # optional: esbuild (minified build) and Playwright (tests)
+npm run build        # src/ -> dist/tbibi.html + docs/ (GitHub Pages)
+npm test             # build + browser checks + screenshots in docs/screenshots/
+npm run perf         # time every screen with 6,000 patients and 70,000 visits
 ```
 
-The build has no dependencies: `node scripts/build.mjs` inlines the CSS and the JavaScript modules into one HTML file.
+The build needs no dependencies: `node scripts/build.mjs` inlines the CSS and the JavaScript modules into one HTML file (minified when esbuild is installed; `npm run build:plain` keeps it readable).
 
 ## Patient QR code (waiting room)
 
 The QR code on the waiting-room screen and on tickets opens `attente.html`, a small page that shows the patient's number and estimated time. It carries only ticket numbers and times, never names.
 
-To make it work on patients' phones, publish the page once with GitHub Pages:
+On the online version (<https://seifmannai.github.io/tbibi/>) this works with no setup.
 
-1. In the GitHub repository: **Settings → Pages → Source: Deploy from a branch → main / docs**.
-2. The page is then at `https://<your-user>.github.io/<repo>/attente/`.
-3. In Tbibi: **Paramètres → Salle d'attente et QR code → Adresse de la page patient**, paste that address.
-
-Without an address, the QR code opens the local copy (`dist/attente.html`) and only works on the practice computer. The page shows the moment the code was generated; live updates will come with the online service.
+When Tbibi is used from the downloaded file, set the address once so the QR code works on patients' phones: **Paramètres → Salle d'attente et QR code → Adresse de la page patient** → `https://seifmannai.github.io/tbibi/attente/`. Without an address, the QR code opens the local copy (`dist/attente.html`) and only works on the practice computer. The page shows the moment the code was generated; live updates will come with the online service.
 
 ## Project structure
 
@@ -80,16 +79,20 @@ tbibi/
 │       ├── views/            one file per screen (today, journal, patients, visit…)
 │       ├── pdf/              print engine and document templates
 │       └── main.js           start-up
-├── scripts/build.mjs         builds dist/tbibi.html
-├── tests/smoke.test.mjs      end-to-end checks with Playwright
+├── scripts/
+│   ├── build.mjs             builds dist/ and docs/
+│   └── modules.mjs           script load order
+├── tests/
+│   ├── smoke.test.mjs        end-to-end checks with Playwright
+│   └── perf.mjs              speed check with a 10-year practice
 ├── dist/                     ready-to-use build: tbibi.html + attente.html
-├── docs/attente/             patient page for GitHub Pages
+├── docs/                     GitHub Pages site (built): index.html = the app, attente/ = patient page
 ├── docs/screenshots/
 ├── CHANGELOG.md
 └── SECURITY.md
 ```
 
-Modules share globals and load in the order listed in `scripts/build.mjs`. To add a screen, create `src/js/views/<name>.js`, add it to that list, register it in `render()` (`src/js/ui/shell.js`) and add its strings to both languages in `i18n.js`.
+Modules share globals and load in the order listed in `scripts/modules.mjs`. To add a screen, create `src/js/views/<name>.js`, add it to that list, register it in `render()` (`src/js/ui/shell.js`) and add its strings to both languages in `i18n.js`.
 
 ## Data and privacy
 
@@ -101,7 +104,7 @@ Read [SECURITY.md](SECURITY.md) before deploying in a practice.
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md). Current version: **1.4.0**.
+See [CHANGELOG.md](CHANGELOG.md). Current version: **1.4.1**.
 
 ## License
 

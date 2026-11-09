@@ -13,7 +13,7 @@ function vToday(pg){
   const Q=todayQueue(d),rd=Q.all,waiting=Q.waiting;
   const next=nextPatient();
   const sm=soldeMap(),unpaid=S.patients.filter(p=>(sm[p.id]||0)>0.0005).sort((a,b)=>sm[b.id]-sm[a.id]).slice(0,5);
-  const recentIds=[];[...S.visits].sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).some(v=>{if(!recentIds.includes(v.patientId))recentIds.push(v.patientId);return recentIds.length>=5});
+  const recentIds=recentPatientIds(5);
   const remaining=rd.filter(r=>r.status==="prevu"||r.status==="arrive"||r.status==="encours").length;
   let hero="";
   if(next){const p=next.patientId?P(next.patientId):null;const lv=p?visitsOf(p.id)[0]:null;const al=p?allergyList(p):[];
@@ -77,4 +77,11 @@ function parseRdvName(raw){
   const out={nom:parts.length>1?parts.slice(0,-1).join(" "):(parts[0]||""),prenom:parts.length>1?parts[parts.length-1]:""};
   if(titre)out.titre=titre;if(sexe)out.sexe=sexe;
   return out;
+}
+
+/* the n patients seen most recently, newest first (one pass, no full sort of all visits) */
+function recentPatientIds(n){
+  const last=new Map();
+  for(const v of S.visits){const k=v.date+(v.time||""),c=last.get(v.patientId);if(c===undefined||k>c)last.set(v.patientId,k)}
+  return[...last].sort((a,b)=>b[1].localeCompare(a[1])).slice(0,n).map(x=>x[0]);
 }

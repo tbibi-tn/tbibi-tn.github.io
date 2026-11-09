@@ -10,6 +10,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - 1.6: file attachments (scanned results, X-rays), growth curves and vaccinations, pregnancy follow-up, interaction warnings.
 - 2.0: installable app, doctor + secretary on two computers, SMS reminders.
 
+## [1.4.1] — 2026-11-09
+
+### Added
+- **Online version.** The app is published with GitHub Pages at <https://seifmannai.github.io/tbibi/>. Data still stays in the doctor's own browser; nothing is sent anywhere.
+- On the online version the waiting-room QR code works with no setup (the patient page is published next to the app).
+- `npm run perf`: times every screen with a 10-year practice (6,000 patients, 70,000 visits).
+
+### Changed
+- **Search is about 20× faster on large practices** (≈ 40 ms instead of ≈ 840 ms per key with 70,000 visits): the searchable text is prepared once when the search box opens instead of on every key.
+- **Patient lookups use an index**, so lists, statistics and the journal no longer scan every patient for each row (Statistics ≈ 3× faster, Today ≈ 4× faster with large data).
+- "Recent patients" on Today is found in one pass instead of sorting every visit.
+- The build minifies the app when esbuild is installed (`npm install`); without it, it still builds with no dependencies. `npm run build:plain` keeps the readable output.
+- The script load order moved to `scripts/modules.mjs`.
+
 ## [1.4.0] — 2026-11-09
 
 ### Added

@@ -6,17 +6,23 @@ function openSearch(){
   const cats=[["all","search_all"],["patients","search_patients"],["visits","search_visits"],["meds","search_meds"],["rdv","search_rdv"]];
   const m=openModal(`<div class="pin">${I("search")}<input id="sq" placeholder="${t("search_ph")}" autocomplete="off"><kbd>Esc</kbd></div><div class="chips" id="scat"></div><div class="res" id="sres"></div><div class="ft"><span><kbd>↑</kbd> <kbd>↓</kbd> ${t("search_nav")}</span><span><kbd>↵</kbd> ${t("search_open")}</span><span><kbd>Tab</kbd> ${t("search_all")} / ${t("search_patients")}…</span></div>`,{cls:"palette"});
   const inp=m.querySelector("#sq");
+  /* searchable text is normalised once when the palette opens, not on every keystroke */
+  let IX=null;
+  const index=()=>IX||(IX={
+    patients:S.patients.map(p=>[p,norm([p.nom,p.prenom,p.nomJF,p.dossier,p.tel,p.tel2,p.cin,p.cnam&&p.cnam.idu,p.ville,p.profession].join(" "))]),
+    visits:[...S.visits].sort((a,b)=>b.date.localeCompare(a.date)).map(v=>{const p=P(v.patientId);return[v,norm([v.diagnostic,v.motif,v.observations,(v.rx||[]).map(r=>r.nom).join(" "),p&&p.nom,p&&p.prenom].join(" "))]}),
+    meds:S.meds.map(md=>[md,norm(md.nom+" "+md.dci+" "+md.classe+" "+md.forme)]),
+    rdv:S.rdv.map(r=>{const p=r.patientId?P(r.patientId):null;return[r,norm([p?shortName(p):r.name,r.motif,r.phone,fmtD(r.date)].join(" "))]}),
+  });
   function run(){
     const q=inp.value.trim(),tk=norm(q).split(/\s+/).filter(Boolean);
     const res={patients:[],visits:[],meds:[],rdv:[]};
     if(tk.length){
       const match=h=>tk.every(x=>h.includes(x));
-      for(const p of S.patients){const h=norm([p.nom,p.prenom,p.nomJF,p.dossier,p.tel,p.tel2,p.cin,p.cnam&&p.cnam.idu,p.ville,p.profession].join(" "));if(match(h))res.patients.push(p)}
-      res.patients.sort((a,b)=>norm(a.nom).indexOf(tk[0])-norm(b.nom).indexOf(tk[0]));
-      const vs=[...S.visits].sort((a,b)=>b.date.localeCompare(a.date));
-      for(const v of vs){const p=P(v.patientId);const h=norm([v.diagnostic,v.motif,v.observations,(v.rx||[]).map(r=>r.nom).join(" "),p&&p.nom,p&&p.prenom].join(" "));if(match(h))res.visits.push(v)}
-      for(const md of S.meds){if(match(norm(md.nom+" "+md.dci+" "+md.classe+" "+md.forme)))res.meds.push(md)}
-      for(const r of S.rdv){const p=r.patientId?P(r.patientId):null;if(match(norm([p?shortName(p):r.name,r.motif,r.phone,fmtD(r.date)].join(" "))))res.rdv.push(r)}
+      const ix=index();
+      for(const g of ["patients","visits","meds","rdv"])for(const[x,h]of ix[g])if(match(h))res[g].push(x);
+      const pos=p=>norm(p.nom).indexOf(tk[0]);
+      res.patients=res.patients.map(p=>[p,pos(p)]).sort((a,b)=>a[1]-b[1]).map(x=>x[0]);
       res.rdv.sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
     }
     const counts={patients:res.patients.length,visits:res.visits.length,meds:res.meds.length,rdv:res.rdv.length};counts.all=counts.patients+counts.visits+counts.meds+counts.rdv;
