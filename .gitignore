@@ -1,0 +1,12 @@
+node_modules/
+test-results/
+playwright-report/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# Never commit real patient data or backups
+*.tbibi
+backups/
+tbibi_sauvegarde_*.json

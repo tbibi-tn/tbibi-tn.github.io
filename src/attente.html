@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d2a21">
+<meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data:; base-uri 'none'; form-action 'none'">
+<title>Salle d'attente — Tbibi</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Crect width=%2724%27 height=%2724%27 rx=%276%27 fill=%27%230f7b5f%27/%3E%3Cpath d=%27M9.2 3.5h5.6v5.7h5.7v5.6h-5.7v5.7H9.2v-5.7H3.5V9.2h5.7z%27 fill=%27white%27/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f7f6;--card:#fff;--ink:#13221d;--muted:#62736d;--line:#e2e9e6;--pri:#0f7b5f;--soft:#e3f2ec;--side:#0d2a21;--acc:#6ee7b7;--warn:#9a6300;--warn-soft:#fbf1dc}
+@media (prefers-color-scheme:dark){:root{--bg:#0a1310;--card:#101c18;--ink:#e8f1ed;--muted:#8ea39b;--line:#1e2f29;--pri:#34c08c;--soft:#123328;--warn:#e7b752;--warn-soft:#272010}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+[dir=rtl] body,[dir=rtl]{font-family:"IBM Plex Sans Arabic","IBM Plex Sans",system-ui,sans-serif}
+.top{background:var(--side);color:#fff;padding:22px 20px 64px}
+.wrap{max-width:520px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:40px;height:40px;border-radius:11px;background:#0f7b5f;display:grid;place-items:center;flex:none}
+.dn{font-weight:700;font-size:18px}.sp{color:var(--acc);font-size:13px}
+.lang{margin-inline-start:auto;display:flex;background:rgba(255,255,255,.08);border-radius:9px;padding:2px}
+.lang button{border:0;background:none;color:#cfe3da;font:inherit;font-size:13px;font-weight:600;padding:5px 10px;border-radius:7px;cursor:pointer}
+.lang button.on{background:var(--acc);color:#06261b}
+main{margin-top:-44px;padding:0 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:14px}
+.hero{text-align:center}
+.lbl{color:var(--muted);font-size:14px;font-weight:500}
+.num{font-size:76px;font-weight:800;line-height:1;color:var(--pri);font-variant-numeric:tabular-nums;margin:4px 0 8px}
+.eta{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.in{font-size:15px;color:var(--muted);margin-top:2px}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.fact{background:var(--soft);border-radius:12px;padding:10px}
+.fact b{display:block;font-size:22px;font-variant-numeric:tabular-nums}.fact span{font-size:12.5px;color:var(--muted)}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:18px}.bar i{display:block;height:100%;background:var(--pri);border-radius:4px;transition:width .4s}
+.notice{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:12px 14px;font-size:14px;font-weight:600;margin-bottom:14px}
+.go{background:var(--pri);color:#fff;border-radius:14px;padding:14px;font-weight:700;font-size:17px;margin-top:16px}
+h2{font-size:15px;margin:0 0 10px}
+.row{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.row:last-child{border-bottom:0}
+.row .t{font-weight:800;font-size:18px;width:52px}.row .h{margin-inline-start:auto;font-weight:600}
+.row.me{background:var(--soft);border-radius:10px;padding-inline:10px}
+.row.cur .t{color:var(--pri)}
+.tag{font-size:11.5px;font-weight:600;background:var(--soft);color:var(--pri);border-radius:20px;padding:1px 8px}
+.small{font-size:12.5px;color:var(--muted);text-align:center;margin:6px 8px}
+.empty{text-align:center;padding:30px 10px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap brand"><div class="mark"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M9.2 3.5h5.6v5.7h5.7v5.6h-5.7v5.7H9.2v-5.7H3.5V9.2h5.7z" fill="#fff"/><path d="M6 12h3l1.4-2.4L13 14.6l1.4-2.6H18" stroke="#0f7b5f" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+<div><div class="dn" id="dn">Tbibi</div><div class="sp" id="sp"></div></div>
+<div class="lang" role="group" aria-label="Langue"><button data-l="fr" class="on">FR</button><button data-l="ar">عربي</button></div></div></header>
+<main class="wrap" id="app"></main>
+<script>
+/* Tbibi — patient waiting page. Reads a snapshot from the address (#d=…) written by the
+   QR code: practice name, ticket numbers and estimated times. No names, no tracking. */
+const L={
+ fr:{yours:"Votre numéro",eta:"Passage estimé vers",in:"dans environ {m}",soon:"C'est bientôt votre tour",now:"Présentez-vous, c'est votre tour",before:"patients avant vous",avg:"min par consultation",
+  queue:"File d'attente",cur:"En consultation",you:"vous",updated:"Estimation calculée à {h}. Rescannez le QR code de la salle d'attente pour l'actualiser.",
+  vary:"L'heure peut changer (urgences, consultations plus longues).",stale:"Ces informations datent de plus de 2 heures. Scannez à nouveau le QR code.",none:"Aucune information. Scannez le QR code affiché dans la salle d'attente ou imprimé sur votre ticket.",empty:"Personne en attente pour le moment.",waiting:"en attente"},
+ ar:{yours:"رقمك",eta:"الوقت المتوقع لدورك",in:"بعد حوالي {m}",soon:"اقترب دورك",now:"تفضّل، حان دورك",before:"مرضى قبلك",avg:"دقيقة لكل فحص",
+  queue:"قائمة الانتظار",cur:"في الفحص الآن",you:"أنت",updated:"تم حساب التقدير على الساعة {h}. امسح الرمز مرة أخرى للتحديث.",
+  vary:"قد يتغيّر الوقت (حالات مستعجلة أو فحوص أطول).",stale:"هذه المعلومات قديمة (أكثر من ساعتين). امسح الرمز مرة أخرى.",none:"لا توجد معلومات. امسح الرمز المعروض في قاعة الانتظار أو على تذكرتك.",empty:"لا أحد في الانتظار حالياً.",waiting:"في الانتظار"}};
+let lang=(navigator.language||"fr").startsWith("ar")?"ar":"fr";
+function data(){try{const m=location.hash.match(/d=([^&]+)/);if(!m)return null;let s=m[1].replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return JSON.parse(new TextDecoder().decode(u))}catch(e){return null}}
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const dur=m=>m<60?m+(lang==="ar"?" دقيقة":" min"):Math.floor(m/60)+(lang==="ar"?" س ":" h ")+String(m%60).padStart(2,"0");
+const hm=min=>{const d=new Date(min*60000);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")};
+function draw(){
+  const T=L[lang],d=data(),app=document.getElementById("app");
+  document.documentElement.lang=lang;document.documentElement.dir=lang==="ar"?"rtl":"ltr";
+  document.querySelectorAll(".lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
+  if(!d){app.innerHTML=`<div class="card empty">${T.none}</div>`;return}
+  document.getElementById("dn").textContent=d.n||"Tbibi";document.getElementById("sp").textContent=[d.s,d.a].filter(Boolean).join(" — ");
+  document.title=(d.n||"Tbibi")+" — "+T.queue;
+  const now=Date.now()/60000,q=d.q||[],me=d.t?q.findIndex(x=>x[0]===d.t):-1;let h="";
+  if(now-d.u>120)h+=`<div class="notice">${T.stale}</div>`;
+  if(d.t){
+    const eta=me>=0?q[me][1]:null,left=eta!=null?Math.round(eta-now):null;
+    const first=q.length?q[0][1]-d.m:d.u,pct=eta!=null?Math.max(4,Math.min(100,(now-first)/(eta-first||1)*100)):100;
+    h+=`<div class="card hero"><div class="lbl">${T.yours}</div><div class="num">${esc(d.t)}</div>
+      ${eta!=null?`<div class="lbl">${T.eta}</div><div class="eta">${hm(eta)}</div><div class="in">${left>3?T.in.replace("{m}",dur(left)):""}</div>${left<=3?`<div class="go">${me===0?T.now:T.soon}</div>`:""}`:""}
+      <div class="facts"><div class="fact"><b>${Math.max(0,me)}</b><span>${T.before}</span></div><div class="fact"><b>${esc(d.m)}</b><span>${T.avg}</span></div></div>
+      <div class="bar" aria-hidden="true"><i style="width:${pct}%"></i></div></div>`;
+  }
+  h+=`<div class="card"><h2>${T.queue}</h2>${d.c?`<div class="row cur"><span class="t">${esc(d.c)}</span><span class="tag">${T.cur}</span></div>`:""}
+    ${q.length?q.map((x,i)=>`<div class="row ${x[0]===d.t?"me":""}"><span class="t">${esc(x[0])}</span>${x[0]===d.t?`<span class="tag">${T.you}</span>`:""}<span class="h">≈ ${hm(x[1])}</span></div>`).join(""):`<div class="empty">${T.empty}</div>`}</div>
+    <p class="small">${T.updated.replace("{h}",hm(d.u))}</p><p class="small">${T.vary}</p>`;
+  app.innerHTML=h;
+}
+document.querySelectorAll(".lang button").forEach(b=>b.onclick=()=>{lang=b.dataset.l;draw()});
+window.addEventListener("hashchange",draw);setInterval(draw,30000);draw();
+</script>
+</body>
+</html>

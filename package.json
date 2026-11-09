@@ -1,0 +1,17 @@
+{
+  "name": "tbibi",
+  "version": "1.4.0",
+  "description": "Tbibi (طبيبي) — logiciel de gestion de cabinet médical, hors ligne, en un seul fichier HTML.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/build.mjs && node tests/smoke.test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
