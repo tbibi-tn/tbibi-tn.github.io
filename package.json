@@ -4,10 +4,10 @@
   "description": "Tbibi (طبيبي) — logiciel de gestion de cabinet médical, hors ligne, en un seul fichier HTML.",
   "private": true,
   "type": "module",
-  "homepage": "https://seifmannai.github.io/tbibi/",
+  "homepage": "https://tbibi-tn.github.io/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/seifmannai/tbibi.git"
+    "url": "https://github.com/tbibi-tn/tbibi-tn.github.io.git"
   },
   "scripts": {
     "build": "node scripts/build.mjs",

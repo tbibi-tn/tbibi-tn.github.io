@@ -20,7 +20,7 @@ function vSettings(pg){
     <div class="card"><div class="hd"><h3><span class="hi">${I("qr")}</span>${t("set_queue")}</h3></div><div class="bd form">
       <label class="field c6"><span>${t("set_consult_min")}</span><select class="in" id="qmin"><option value="0">${t("set_auto_min").replace("{m}",autoConsultMin())}</option>${[5,8,10,12,15,20,25,30,40,45].map(x=>`<option value="${x}" ${+S.settings.consultMin===x?"selected":""}>${x} min</option>`).join("")}</select></label>
       <label class="field c6"><span>${t("set_screen_names")}</span><select class="in" id="qnames"><option value="numbers">${t("set_names_numbers")}</option><option value="initials" ${S.settings.screenNames==="initials"?"selected":""}>${t("set_names_initials")}</option></select></label>
-      <label class="field c12"><span>${t("set_queue_url")}</span><input class="in" id="qurl" type="url" placeholder="https://votre-nom.github.io/tbibi/attente/" value="${esc(S.settings.queueUrl||"")}"></label>
+      <label class="field c12"><span>${t("set_queue_url")}</span><input class="in" id="qurl" type="url" placeholder="https://tbibi-tn.github.io/attente/" value="${esc(S.settings.queueUrl||"")}"></label>
       <p class="c12 muted" style="margin:-4px 0 0;font-size:12.5px">${t("set_queue_url_hint")}</p>
       <label class="chk c12" style="padding-left:0"><input type="checkbox" id="qauto" ${S.settings.autoTicket?"checked":""}>${t("set_auto_ticket")}</label>
       <div class="c12 row wrap"><button class="btn soft" data-act="openScreen">${I("tv")}${t("q_screen")}</button><button class="btn" data-act="qTest">${I("qr")}${t("set_queue_test")}</button></div>

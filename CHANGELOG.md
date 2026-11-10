@@ -13,7 +13,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ## [1.4.1] — 2026-11-09
 
 ### Added
-- **Online version.** The app is published with GitHub Pages at <https://seifmannai.github.io/tbibi/>. Data still stays in the doctor's own browser; nothing is sent anywhere.
+- **Online version.** The app is published with GitHub Pages at <https://tbibi-tn.github.io/>. Data still stays in the doctor's own browser; nothing is sent anywhere.
 - On the online version the waiting-room QR code works with no setup (the patient page is published next to the app).
 - `npm run perf`: times every screen with a 10-year practice (6,000 patients, 70,000 visits).
 

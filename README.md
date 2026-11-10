@@ -11,7 +11,7 @@ Tbibi replaces 2000s-era desktop software ("Mon Cabinet v2003" and similar). It 
 - Light and dark themes
 - Works offline; data stays on the doctor's computer, encrypted if the doctor sets a password
 
-**Try it online: <https://seifmannai.github.io/tbibi/>** (demo data; everything you type stays in your own browser)
+**Try it online: <https://tbibi-tn.github.io/>** (demo data; everything you type stays in your own browser)
 
 ## Features
 
@@ -35,7 +35,7 @@ Tbibi replaces 2000s-era desktop software ("Mon Cabinet v2003" and similar). It 
 
 ### For doctors
 
-1. Open <https://seifmannai.github.io/tbibi/>, or download `dist/tbibi.html` and double-click it to use it with no internet.
+1. Open <https://tbibi-tn.github.io/>, or download `dist/tbibi.html` and double-click it to use it with no internet.
 2. Use a recent Chrome, Edge or Firefox.
 3. Go to **Paramètres**: enter the name, specialty and address printed on documents, upload the practice logo and scanned stamp, and turn on **Sécurité → Activer le chiffrement**.
 4. Click **Recharger les données de démonstration** to explore with fake patients, or **Effacer toutes les données** to start fresh.
@@ -59,9 +59,9 @@ The build needs no dependencies: `node scripts/build.mjs` inlines the CSS and th
 
 The QR code on the waiting-room screen and on tickets opens `attente.html`, a small page that shows the patient's number and estimated time. It carries only ticket numbers and times, never names.
 
-On the online version (<https://seifmannai.github.io/tbibi/>) this works with no setup.
+On the online version (<https://tbibi-tn.github.io/>) this works with no setup.
 
-When Tbibi is used from the downloaded file, set the address once so the QR code works on patients' phones: **Paramètres → Salle d'attente et QR code → Adresse de la page patient** → `https://seifmannai.github.io/tbibi/attente/`. Without an address, the QR code opens the local copy (`dist/attente.html`) and only works on the practice computer. The page shows the moment the code was generated; live updates will come with the online service.
+When Tbibi is used from the downloaded file, set the address once so the QR code works on patients' phones: **Paramètres → Salle d'attente et QR code → Adresse de la page patient** → `https://tbibi-tn.github.io/attente/`. Without an address, the QR code opens the local copy (`dist/attente.html`) and only works on the practice computer. The page shows the moment the code was generated; live updates will come with the online service.
 
 ## Project structure
 
