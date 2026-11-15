@@ -91,13 +91,12 @@ function openVisit(pid,{visitId,rdvId,rx,draft}={}){
         <section class="card" id="sec-consult"><div class="hd"><h3><span class="hi">${I("stetho")}</span>${t("consultation")}</h3></div><div class="bd form">
           <label class="field c12"><span>${t("motif")}</span><textarea class="in" data-f="motif" style="min-height:56px">${esc(d.motif)}</textarea></label>
           <label class="field c12"><span>${t("diagnostic")}</span><input class="in" data-f="diagnostic" id="vdx" value="${esc(d.diagnostic)}"></label>
-          <div class="c12"><div class="chips">${[...ownDx,...topDx.filter(x=>!ownDx.includes(x))].slice(0,12).map(x=>`<button class="chip" data-dx="${esc(x)}">${esc(x)}</button>`).join("")}</div><div id="tplsug"></div></div>
+          <div class="c12"><div class="chips">${[...ownDx,...topDx.filter(x=>!ownDx.includes(x))].slice(0,12).map(x=>`<button class="chip" data-dx="${esc(x)}">${esc(x)}</button>`).join("")}</div></div>
           <label class="field c12"><span>${t("observations")}</span><textarea class="in" data-f="observations" style="min-height:90px">${esc(d.observations)}</textarea></label>
         </div></section>
         <section class="card" id="sec-rx"><div class="hd"><h3><span class="hi">${I("meds")}</span>${t("prescription")}</h3><div class="r">
-          <select class="in" id="vtpl" style="height:30px;width:auto;font-size:12.5px"><option value="">${t("use_template")}</option>${S.templates.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select>
           ${vs.find(v=>(v.rx||[]).length)?`<button class="btn xs" id="vrenew">${I("repeat")}${t("renew_last")}</button>`:""}
-          <button class="btn xs" id="vsavetpl" title="${t("save_template")}">${I("copy")}</button><button class="btn xs soft" id="vprx">${I("pdf")}${t("print_rx")}</button>
+          <button class="btn xs soft" id="vprx">${I("pdf")}${t("print_rx")}</button>
         </div></div><div class="bd"><input class="in" id="vmed" placeholder="${t("add_med")}"><div id="rxlist" style="margin-top:6px"></div></div></section>
         <section class="card" id="sec-exams"><div class="hd"><h3><span class="hi">${I("flask")}</span>${t("exams")}</h3></div><div class="bd">
           <div class="row" style="margin-bottom:8px"><span class="ico">${I("flask")}</span><b>${t("analyses")}</b><button class="btn xs soft right" id="pan">${I("pdf")}${t("doc_analyses")}</button></div>
@@ -154,25 +153,16 @@ function openVisit(pid,{visitId,rdvId,rx,draft}={}){
     const nv=prevSolde+num(d.honoraires)-num(d.recu);
     $("#vtot",el).innerHTML=`<span>${t("honoraires")} <b class="num">${money(d.honoraires)}</b></span><span>${t("recu")} <b class="num">${money(d.recu)}</b></span><span>${t("ancien_solde")} <b class="num">${money(prevSolde)}</b></span><span>${t("nouveau_solde")} <b class="num ${nv>0.0005?"red":"green"}" style="font-size:15px">${money(nv)} ${t("tnd")}</b></span>${d.rx.length?`<span><b>${d.rx.length}</b> ${t("search_meds").toLowerCase()}</span>`:""}`;progress();
   }
-  function tplSuggest(){
-    const dx=norm(d.diagnostic);const box=$("#tplsug",el);if(!dx||dx.length<3){box.innerHTML="";return}
-    const tp=S.templates.find(x=>norm(x.name).includes(dx)||dx.includes(norm(x.name).split(" ")[0]));
-    box.innerHTML=tp&&!d.rx.length?`<button class="btn xs" style="margin-top:8px" id="tplgo">${I("copy")}${t("use_template")} « ${esc(tp.name)} »</button>`:"";
-    $("#tplgo",el)&&($("#tplgo",el).onclick=()=>{applyTpl(tp);box.innerHTML=""});
-  }
-  function applyTpl(tp){tp.rx.forEach(l=>{const m=S.meds.find(x=>x.id===l.medId)||{id:l.medId,nom:l.nom};const hit=m.dci?allergyHit(p,m):null;if(hit)toast("⚠ "+t("allergy_warn")+" "+hit+" — "+m.nom);d.rx.push({...l})});drawRx()}
   function bind(){
     $$("[data-vt]",el).forEach(x=>x.oninput=()=>{d.vitals[x.dataset.vt]=x.value.replace(",",".");$("#imc",el).value=imcOf(d.vitals);progress()});
-    $$("[data-f]",el).forEach(x=>x.oninput=()=>{d[x.dataset.f]=x.value;if(x.dataset.f==="diagnostic")tplSuggest();progress()});
-    $$("[data-dx]",el).forEach(b=>b.onclick=()=>{$("#vdx",el).value=b.dataset.dx;d.diagnostic=b.dataset.dx;tplSuggest()});
+    $$("[data-f]",el).forEach(x=>x.oninput=()=>{d[x.dataset.f]=x.value;progress()});
+    $$("[data-dx]",el).forEach(b=>b.onclick=()=>{$("#vdx",el).value=b.dataset.dx;d.diagnostic=b.dataset.dx});
     $$("[data-sec]",el).forEach(a=>a.onclick=e=>{e.preventDefault();$("#sec-"+a.dataset.sec,el).scrollIntoView({behavior:"smooth",block:"start"})});
     $$("[data-mv]",el).forEach(x=>x.onclick=()=>openVisitView(x.dataset.mv));
     $("#vdate",el).onchange=e=>d.date=e.target.value||todayISO();
     $("#vback",el).onclick=()=>VE.close();$("#vback2",el).onclick=()=>VE.close();
     attachAC($("#vmed",el),{source:medSource,render:medRender,onPick:(it,inp)=>{inp.value="";addMed(it.m)}});
-    $("#vtpl",el).onchange=e=>{const tp=S.templates.find(x=>x.id===e.target.value);if(tp)applyTpl(tp);e.target.value=""};
     $("#vrenew",el)&&($("#vrenew",el).onclick=()=>{const lv=vs.find(v=>(v.rx||[]).length);lv.rx.forEach(r=>d.rx.push({...r}));drawRx()});
-    $("#vsavetpl",el).onclick=()=>{if(!d.rx.length)return;openModal(mh(t("save_template"))+`<div class="mb"><label class="field"><span>${t("template_name")}</span><input class="in" id="tn" value="${esc(d.diagnostic)}"></label></div><div class="mf"><button class="btn" data-close>${t("cancel")}</button><button class="btn pri" id="tok">${t("save")}</button></div>`,{cls:"sm",onMount:m=>m.querySelector("#tok").onclick=()=>{const n=m.querySelector("#tn").value.trim();if(!n)return;S.templates.push({id:uid("t"),name:n,rx:JSON.parse(JSON.stringify(d.rx))});save();closeModal();toast(t("saved"));draw()}})};
     checks("ckan",ANALYSES.slice(0,24),"analyses");checks("ckim",IMAGERIE.slice(0,12),"imagerie");
     const other=(id,key,box,list)=>$("#"+id,el).onkeydown=e=>{if(e.key==="Enter"&&e.target.value.trim()){e.preventDefault();d[key].push(e.target.value.trim());e.target.value="";checks(box,list,key)}};
     other("anx","analyses","ckan",ANALYSES.slice(0,24));other("imx","imagerie","ckim",IMAGERIE.slice(0,12));
@@ -189,7 +179,7 @@ function openVisit(pid,{visitId,rdvId,rx,draft}={}){
     $("#pnote",el).onclick=()=>pdfNote(p,d);
     $("#vprx",el).onclick=()=>{if(d.rx.length)pdfRx(p,d);else $("#vmed",el).focus()};
     $("#vsave",el).onclick=saveVisit;
-    drawRx();totals();tplSuggest();progress();
+    drawRx();totals();progress();
   }
   function saveVisit(){
     d.honoraires=num(d.honoraires);d.recu=num(d.recu);

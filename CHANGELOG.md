@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Removed
+- **Prescription templates** page (« Modèles d'ordonnance »), with the template picker and « save as template » button in the consultation screen. Not needed by the doctor. « Renew last prescription » stays.
+
 ### Planned
 - 1.5: import from Mon Cabinet v2003, medication list import (CSV), numbered fee notes and monthly income summary, live QR page (needs the online service).
 - 1.6: file attachments (scanned results, X-rays), growth curves and vaccinations, pregnancy follow-up, interaction warnings.

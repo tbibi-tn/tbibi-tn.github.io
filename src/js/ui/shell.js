@@ -3,7 +3,7 @@ function go(path){location.hash="#/"+path}
 function parseHash(){const h=location.hash.replace(/^#\/?/,"");UI.route=h?h.split("/"):["today"]}
 
 /* ---------- shell ---------- */
-const NAV=[["today","today"],["agenda","agenda"],["patients","patients"],["journal","journal"],["sep","grp_tools"],["meds","meds"],["templates","templates"],["stats","stats"],["sep",""],["settings","settings"]];
+const NAV=[["today","today"],["agenda","agenda"],["patients","patients"],["journal","journal"],["sep","grp_tools"],["meds","meds"],["stats","stats"],["sep",""],["settings","settings"]];
 const LOGO=`<svg viewBox="0 0 24 24" fill="none"><path d="M9.2 3.5h5.6v5.7h5.7v5.6h-5.7v5.7H9.2v-5.7H3.5V9.2h5.7z" fill="#fff"/><path d="M6 12h3l1.4-2.4L13 14.6l1.4-2.6H18" stroke="#0f7b5f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const brandHTML=()=>`<div class="mark">${LOGO}</div><div><div class="wordmark">${APP}<span class="ar">${APP_AR}</span></div><small>${t("tagline")}</small></div>`;
 function shell(){
@@ -36,7 +36,7 @@ function render(){
   if(UI.route[0]==="ecran"){vScreen();return}
   shell();
   const r=UI.route[0],pg=$("#page");
-  const V={today:vToday,journal:vJournal,patients:vPatients,patient:vPatient,agenda:vAgenda,meds:vMeds,templates:vTemplates,stats:vStats,settings:vSettings}[r]||vToday;
+  const V={today:vToday,journal:vJournal,patients:vPatients,patient:vPatient,agenda:vAgenda,meds:vMeds,stats:vStats,settings:vSettings}[r]||vToday;
   V(pg);
   draftBanner(pg);
 }
