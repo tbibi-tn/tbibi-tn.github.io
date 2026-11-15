@@ -21,7 +21,7 @@ Tbibi replaces 2000s-era desktop software ("Mon Cabinet v2003" and similar). It 
 | **Waiting room QR** | TV screen with tickets, times and a QR code; 80 mm tickets; patient phone page in French and Arabic (no names ever leave the app) |
 | **Search** | `Ctrl K` searches patients, consultations, medications and appointments as you type, with category tabs |
 | **Patient file** | Identity, CNAM details (APCI, pathway, unique ID), medical history, allergies, vital-sign charts, visit history, payments, duplicate detection |
-| **Consultation** | Vital signs with abnormal values in orange, automatic BMI, diagnosis suggestions, prescriptions with autocomplete, templates, renew last prescription, allergy alerts, lab and imaging requests, fees and claim form |
+| **Consultation** | Vital signs with abnormal values in orange, automatic BMI, diagnosis suggestions, prescriptions with autocomplete, renew last prescription, allergy alerts, lab and imaging requests, fees and claim form |
 | **Documents (PDF)** | Prescription, 7 certificate types, lab request, imaging request, referral letter, fee note, patient record, daily log, all with the doctor's own header |
 | **Journal** | Daily log with revenue, cash collected, unpaid, with/without claim form; PDF and Excel export |
 | **Calendar** | Weekly view, click a slot to book, appointment statuses |

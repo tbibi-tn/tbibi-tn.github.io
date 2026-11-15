@@ -27,7 +27,6 @@ export const MODULES = [
   "pdf/documents.js",
   "views/agenda.js",
   "views/meds.js",
-  "views/templates.js",
   "ui/charts.js",
   "views/stats.js",
   "views/settings.js",

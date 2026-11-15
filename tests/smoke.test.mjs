@@ -47,7 +47,7 @@ const shot = async (name) => { await page.waitForTimeout(250); if (SHOT) await p
 
 section("Screens");
 await shot("today");
-for (const r of ["journal", "patients", "agenda", "meds", "templates", "stats", "settings"]) { await page.evaluate((r) => (location.hash = "#/" + r), r); await shot(r); }
+for (const r of ["journal", "patients", "agenda", "meds", "stats", "settings"]) { await page.evaluate((r) => (location.hash = "#/" + r), r); await shot(r); }
 await page.evaluate(() => (location.hash = "#/patient/p4")); await shot("patient");
 await page.evaluate(() => (location.hash = "#/patient/p4/vitals")); await shot("patient-vitals");
 ok(errors.length === 0, "all screens render without errors");
