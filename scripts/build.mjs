@@ -1,7 +1,7 @@
 // Builds the single-file app from src/:
 //   dist/tbibi.html        the app (one file, for doctors to download)
 //   dist/attente.html      patient phone page, local copy
-//   docs/index.html        the app on GitHub Pages  -> https://<user>.github.io/tbibi/
+//   docs/index.html        presentation page on GitHub Pages (src/landing.html); the app itself is served per doctor by the license server
 //   docs/attente/          patient phone page on GitHub Pages (opened by the QR code;
 //                          docs/attente.html is the same page, found automatically by the online app)
 // Usage: node scripts/build.mjs [--no-minify]
@@ -40,7 +40,7 @@ const html = readFileSync(src("index.html"), "utf8")
   .replace("<!-- @inline-js -->", () => `<script>\n${banner}\nconst APP_VERSION="${pkg.version}";\n${js}</script>`);
 
 writeFileSync(out("dist/tbibi.html"), html);
-writeFileSync(out("docs/index.html"), html);
+copyFileSync(src("landing.html"), out("docs/index.html"));
 copyFileSync(src("attente.html"), out("dist/attente.html"));
 copyFileSync(src("attente.html"), out("docs/attente/index.html"));
 copyFileSync(src("attente.html"), out("docs/attente.html")); // the online app's QR code finds it with no setup
