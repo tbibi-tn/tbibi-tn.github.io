@@ -122,7 +122,7 @@ async function admin(env, req, path) {
   if (path === "/api/admin/data") {
     const doctors = (await env.DB.prepare("SELECT * FROM doctors ORDER BY id").all()).results;
     const devices = (await env.DB.prepare("SELECT id,doctor_id,device_id,label,app_version,stats,first_seen,last_seen,blocked FROM devices ORDER BY last_seen DESC").all()).results;
-    const versions = (await env.DB.prepare("SELECT version,notes,created,length(html) size FROM versions ORDER BY created DESC").all()).results;
+    const versions = await allVersions(env);
     return json({ doctors, devices, versions });
   }
   if (path === "/api/admin/doctor" && m === "POST") {
@@ -157,15 +157,30 @@ async function admin(env, req, path) {
   return json({ ok: false, error: "not_found" }, 404);
 }
 
+// ---- versions: bundled ones (server/versions/, added by scripts/release.mjs) + manual uploads (D1) ----
+async function bundled(env) {
+  if (!env.ASSETS) return [];
+  const r = await env.ASSETS.fetch("https://assets/index.json");
+  return r.ok ? await r.json() : [];
+}
+async function allVersions(env) {
+  const b = (await bundled(env)).map((v) => ({ ...v, source: "github" }));
+  const d = (await env.DB.prepare("SELECT version,notes,created,length(html) size FROM versions").all()).results.map((v) => ({ ...v, source: "upload" }));
+  const seen = new Set(d.map((v) => v.version));
+  return [...d, ...b.filter((v) => !seen.has(v.version))].sort((a, b) => (b.created || "").localeCompare(a.created || ""));
+}
+const html = (body) => new Response(body, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache" } });
 // ---- serve the app version assigned to a license ----
 async function serveApp(env, key) {
   const d = await env.DB.prepare("SELECT version,status FROM doctors WHERE license_key=?").bind(key.toUpperCase()).first();
   if (!d || d.status !== "active") return new Response("Invalid license", { status: 403 });
-  const v = d.version
-    ? await env.DB.prepare("SELECT html FROM versions WHERE version=?").bind(d.version).first()
-    : await env.DB.prepare("SELECT html FROM versions ORDER BY created DESC LIMIT 1").first();
-  if (!v) return new Response("No version published", { status: 404 });
-  return new Response(v.html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache" } });
+  const list = await allVersions(env);
+  const want = d.version && list.find((v) => v.version === d.version) ? d.version : list[0]?.version;
+  if (!want) return new Response("No version published", { status: 404 });
+  const up = await env.DB.prepare("SELECT html FROM versions WHERE version=?").bind(want).first();
+  if (up) return html(up.html);
+  const a = await env.ASSETS.fetch("https://assets/" + encodeURIComponent(want) + ".html");
+  return a.ok ? html(await a.text()) : new Response("Version file missing", { status: 404 });
 }
 
 export default {
@@ -177,6 +192,7 @@ export default {
       if (p === "/api/check" && req.method === "POST") return await check(env, req);
       if (p === "/api/pubkey") return json((await keys(env)).pub);
       if (p.startsWith("/api/admin")) return await admin(env, req, p);
+      if (/^\/(app\/)?attente(\.html)?$/.test(p) && env.ASSETS) return html(await (await env.ASSETS.fetch("https://assets/attente.html")).text());
       if (p.startsWith("/app/")) return await serveApp(env, decodeURIComponent(p.slice(5)));
       if (p === "/admin" || p === "/") return new Response(ADMIN_HTML, { headers: { "content-type": "text/html; charset=utf-8", "x-frame-options": "DENY" } });
       return new Response("Not found", { status: 404 });
@@ -227,14 +243,14 @@ function draw(){
   <div class="card"><h3>Doctors <span class="pill">\${D.doctors.length}</span><button class="pri right" onclick="edit()">+ New doctor</button></h3>
   <table><thead><tr><th>Doctor / clinic</th><th>License key</th><th>Devices</th><th>Version</th><th>Last activity</th><th>Patients</th><th>License</th></tr></thead><tbody>
   \${D.doctors.map(d=>{const dv=devs(d.id),last=dv[0],st=JSON.parse(last?.stats||"{}"),exp=d.expires&&d.expires<today;
-   return\`<tr class="click" onclick="edit(\${d.id})"><td><b>\${esc(d.name)}</b><div class="mut">\${esc(d.cabinet)}</div></td><td><code onclick="event.stopPropagation()">\${d.license_key}</code></td>
+   return\`<tr class="click" onclick="edit(\${d.id})"><td><b>\${esc(d.name)}</b><div class="mut">\${esc(d.cabinet)}</div></td><td><code onclick="event.stopPropagation()">\${d.license_key}</code><div class="mut"><a href="/app/\${d.license_key}" target="_blank" onclick="event.stopPropagation()">open app</a> · <a href="#" onclick="event.stopPropagation();navigator.clipboard.writeText(location.origin+'/app/\${d.license_key}');this.textContent='copied';return false">copy link</a></div></td>
    <td>\${dv.filter(x=>!x.blocked).length} / \${d.max_devices}</td><td>\${esc(d.version||"latest")}</td><td>\${last?ago(last.last_seen)+'<div class="mut">v'+esc(last.app_version)+"</div>":'<span class="mut">never</span>'}</td>
    <td>\${st.patients??"—"}<div class="mut">\${st.visits!=null?st.visits+" visits":""}</div></td>
    <td>\${d.status!=="active"?'<span class="pill red">blocked</span>':exp?'<span class="pill red">expired</span>':'<span class="pill">active</span>'}<div class="mut">\${d.expires?"→ "+d.expires:"no limit"}</div></td></tr>\`}).join("")||'<tr><td colspan="7" class="mut">No doctors yet. Click "New doctor".</td></tr>'}
   </tbody></table></div>
   <div class="card"><h3>App versions <button class="right" onclick="upVer()">+ Publish a version</button></h3>
   <table><thead><tr><th>Version</th><th>Notes</th><th>Published</th><th>Size</th><th>Doctors</th><th></th></tr></thead><tbody>
-  \${D.versions.map((v,i)=>\`<tr><td><b>\${esc(v.version)}</b> \${i===0?'<span class="pill">latest</span>':""}</td><td>\${esc(v.notes)}</td><td>\${v.created.slice(0,10)}</td><td>\${Math.round(v.size/1024)} KB</td><td>\${D.doctors.filter(d=>d.version===v.version||(!d.version&&i===0)).map(d=>esc(d.name)).join(", ")}</td><td><button class="red" onclick="delVer('\${esc(v.version)}')">Delete</button></td></tr>\`).join("")||'<tr><td colspan="6" class="mut">No version published.</td></tr>'}
+  \${D.versions.map((v,i)=>\`<tr><td><b>\${esc(v.version)}</b> \${i===0?'<span class="pill">latest</span>':""}</td><td>\${esc(v.notes)}</td><td>\${v.created.slice(0,10)}</td><td>\${v.size?Math.round(v.size/1024)+" KB":'<span class="mut">from GitHub</span>'}</td><td>\${D.doctors.filter(d=>d.version===v.version||(!d.version&&i===0)).map(d=>esc(d.name)).join(", ")}</td><td>\${v.source==="upload"?\`<button class="red" onclick="delVer('\${esc(v.version)}')">Delete</button>\`:""}</td></tr>\`).join("")||'<tr><td colspan="6" class="mut">No version published.</td></tr>'}
   </tbody></table></div></main>\`;
 }
 function edit(id){
@@ -243,7 +259,7 @@ function edit(id){
   const f=(k,l,v,c="",t="text")=>\`<label class="\${c}">\${l}<input id="f_\${k}" type="\${t}" value="\${esc(v)}"></label>\`;
   const dv=id?D.devices.filter(x=>x.doctor_id===id):[];
   const m=document.createElement("div");m.className="modal";m.innerHTML=\`<div><h2 style="margin-top:0">\${id?esc(d.name):"New doctor"}</h2>
-  \${id?\`<p>License key: <code>\${d.license_key}</code></p>\`:""}
+  \${id?\`<p>License key: <code>\${d.license_key}</code><br>App link for this doctor: <code>\${location.origin}/app/\${d.license_key}</code></p>\`:""}
   <h4>License</h4><div class="grid">\${f("name","Doctor name",d.name)}\${f("cabinet","Clinic name",d.cabinet)}\${f("phone","Phone (contact)",d.phone)}
   \${f("max_devices","Allowed devices",d.max_devices,"","number")}\${f("expires","Expires on (empty = never)",d.expires,"","date")}
   <label>Status<select id="f_status"><option value="active">Active</option><option value="blocked" \${d.status!=="active"?"selected":""}>Blocked</option></select></label>

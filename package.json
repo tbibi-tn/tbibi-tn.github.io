@@ -1,7 +1,7 @@
 {
   "name": "tbibi",
-  "version": "1.4.1",
-  "description": "Tbibi (طبيبي) — logiciel de gestion de cabinet médical, hors ligne, en un seul fichier HTML.",
+  "version": "1.5.0",
+  "description": "Tbibi (\u0637\u0628\u064a\u0628\u064a) \u2014 logiciel de gestion de cabinet m\u00e9dical, hors ligne, en un seul fichier HTML.",
   "private": true,
   "type": "module",
   "homepage": "https://tbibi-tn.github.io/",
@@ -13,7 +13,8 @@
     "build": "node scripts/build.mjs",
     "build:plain": "node scripts/build.mjs --no-minify",
     "test": "node scripts/build.mjs && node tests/smoke.test.mjs",
-    "perf": "node scripts/build.mjs && node tests/perf.mjs"
+    "perf": "node scripts/build.mjs && node tests/perf.mjs",
+    "release": "node scripts/release.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.0",

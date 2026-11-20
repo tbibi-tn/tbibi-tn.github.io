@@ -109,3 +109,12 @@ See [CHANGELOG.md](CHANGELOG.md). Current version: **1.4.1**.
 ## License
 
 All rights reserved © 2026. Contact the author to use Tbibi in a practice.
+
+## Releasing an update (license server)
+
+1. Bump `version` in `package.json`.
+2. `npm run release -- "what changed"` — builds the app and adds it to `server/versions/`.
+3. Commit and push to `main`. GitHub deploys the license server; the version appears in the admin panel.
+4. In the admin panel, each doctor is on "Always the latest" or a pinned version. Doctors open the app from their own link: `https://tbibi-license.seif-manaibs0.workers.dev/app/<LICENSE-KEY>`.
+
+`https://tbibi-tn.github.io/` is a presentation page only.

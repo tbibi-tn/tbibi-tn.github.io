@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tbibi طبيبي — logiciel de cabinet médical</title>
+<meta name="description" content="Tbibi : gestion de cabinet médical simple, hors ligne, vos données restent dans votre cabinet.">
+<style>
+:root{--pri:#0f7b5f;--ink:#16302a;--mut:#5c7a70;--bg:#f4f7f6}
+*{box-sizing:border-box}body{margin:0;font:16px/1.55 system-ui,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg)}
+header{background:#0d2a22;color:#fff;padding:56px 20px 64px;text-align:center}
+.logo{font-size:30px;font-weight:700}.logo span{color:#5fe0b5;margin-left:8px}
+h1{font-size:clamp(26px,4vw,40px);margin:18px auto 10px;max-width:760px;line-height:1.2}
+header p{color:#b9d6cc;max-width:620px;margin:0 auto}
+main{max-width:980px;margin:-32px auto 40px;padding:0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:#fff;border:1px solid #dde7e3;border-radius:12px;padding:20px}.card h3{margin:0 0 6px;color:var(--pri);font-size:17px}.card p{margin:0;color:var(--mut);font-size:14.5px}
+.cta{text-align:center;margin:36px 0 10px}.cta a{display:inline-block;background:var(--pri);color:#fff;text-decoration:none;padding:12px 22px;border-radius:9px;font-weight:600}
+.shot{width:100%;border-radius:12px;border:1px solid #dde7e3;margin-top:22px;display:block}
+footer{text-align:center;color:var(--mut);font-size:13px;padding:24px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Tbibi<span>طبيبي</span></div>
+  <h1>Le logiciel de cabinet médical simple, rapide, qui marche même sans internet.</h1>
+  <p>Dossiers patients, consultations, ordonnances, certificats, agenda, salle d'attente et statistiques. Les données de vos patients restent dans votre cabinet.</p>
+</header>
+<main>
+  <div class="grid">
+    <div class="card"><h3>Consultation en un écran</h3><p>Constantes, diagnostic, ordonnance avec recherche de médicaments, certificats et honoraires.</p></div>
+    <div class="card"><h3>Vos données chez vous</h3><p>Tout est enregistré sur l'ordinateur du cabinet, chiffré par mot de passe. Rien n'est envoyé sur internet.</p></div>
+    <div class="card"><h3>Fonctionne hors ligne</h3><p>Pas de connexion ? Le cabinet continue de travailler normalement.</p></div>
+    <div class="card"><h3>Salle d'attente</h3><p>File d'attente avec QR code : le patient suit son tour sur son téléphone.</p></div>
+    <div class="card"><h3>Ordonnances à votre en-tête</h3><p>Ordonnances, certificats, lettres et factures imprimés avec votre logo et votre cachet.</p></div>
+    <div class="card"><h3>Installation et suivi</h3><p>Installation, import de votre ancien logiciel et assistance inclus.</p></div>
+  </div>
+  <img class="shot" src="screenshots/consultation.png" alt="Écran de consultation Tbibi">
+  <div class="cta"><a href="#contact" id="contact">Demander une démonstration</a></div>
+</main>
+<footer>Tbibi © 2026 — Déjà client ? Utilisez le lien personnel qui vous a été remis.</footer>
+</body>
+</html>

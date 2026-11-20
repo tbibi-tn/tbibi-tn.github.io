@@ -7,3 +7,9 @@ workers_dev = true
 binding = "DB"
 database_name = "tbibi-licenses"
 database_id = "6d8488a1-28e7-4c45-903b-b71939f77dc6"
+
+# app versions bundled with the server (added by `npm run release`)
+[assets]
+directory = "./versions"
+binding = "ASSETS"
+run_worker_first = true
