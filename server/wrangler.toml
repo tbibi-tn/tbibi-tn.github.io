@@ -1,0 +1,9 @@
+name = "tbibi-license"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tbibi-licenses"
+database_id = "6d8488a1-28e7-4c45-903b-b71939f77dc6"
