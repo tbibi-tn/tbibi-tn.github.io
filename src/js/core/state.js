@@ -13,9 +13,15 @@ function loadPrefs(){
 async function loadData(){
   if(await readVault())return false;
   try{S=(await kvGet("data"))||null}catch(e){S=null}
-  if(!S||!S.patients){S=buildDemo();save();}
+  if(!S||!S.patients){S=emptyData();save();}
   migrateData();
   return true;
+}
+/* a new installation starts empty (keeps the medication list, fees and agenda settings) */
+function emptyData(){
+  const d=buildDemo();
+  return {...d,settings:{...d.settings,doctor:{name:"",spe:"",addr:"",city:"",phone:"",email:"",cnam:"",mf:"",hours:"",autoStamp:true},doctors:[]},
+    patients:[],visits:[],rdv:[],payments:[],templates:[]};
 }
 /* bring older saved data up to the current shape */
 function migrateData(){

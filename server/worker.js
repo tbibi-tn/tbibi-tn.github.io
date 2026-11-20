@@ -21,7 +21,7 @@ const SCHEMA = [
      UNIQUE(doctor_id, device_id))`,
   `CREATE TABLE IF NOT EXISTS versions(version TEXT PRIMARY KEY, notes TEXT, html TEXT, created TEXT)`,
 ];
-const OFFLINE_DAYS = 14;
+const OFFLINE_DAYS = 14; // default; per doctor in doctors.offline_days (0 = never needs internet)
 const now = () => new Date().toISOString();
 const json = (d, s = 200, h = {}) => new Response(JSON.stringify(d), { status: s, headers: { "content-type": "application/json", ...CORS, ...h } });
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type", "access-control-allow-methods": "GET,POST,OPTIONS" };
@@ -32,6 +32,7 @@ let ready = false;
 async function init(env) {
   if (ready) return;
   await env.DB.batch(SCHEMA.map((s) => env.DB.prepare(s)));
+  try { await env.DB.prepare("ALTER TABLE doctors ADD COLUMN offline_days INTEGER DEFAULT 14").run(); } catch (e) {} // already there
   ready = true;
 }
 const cfg = async (env, k) => (await env.DB.prepare("SELECT v FROM config WHERE k=?").bind(k).first())?.v ?? null;
@@ -100,7 +101,8 @@ async function check(env, req) {
       .bind(now(), String(b.appVersion || ""), JSON.stringify(b.stats || {}), String(b.label || "").slice(0, 120), dev.id).run();
   }
   const payload = { did: d.id, key, device, cabinet: d.cabinet, name: d.name, version: d.version || null,
-    settings: JSON.parse(d.settings || "{}"), expires: d.expires || null, iat: Date.now(), until: Date.now() + OFFLINE_DAYS * 864e5 };
+    settings: JSON.parse(d.settings || "{}"), expires: d.expires || null, offline_days: d.offline_days ?? OFFLINE_DAYS, iat: Date.now(),
+    until: Date.now() + ((d.offline_days ?? OFFLINE_DAYS) || 36500) * 864e5 };
   return json({ ok: true, license: await sign(env, payload) });
 }
 
@@ -127,9 +129,9 @@ async function admin(env, req, path) {
   }
   if (path === "/api/admin/doctor" && m === "POST") {
     const b = await req.json();
-    const f = [b.name || "", b.cabinet || "", b.phone || "", +b.max_devices || 1, b.expires || "", b.status || "active", b.version || "", JSON.stringify(b.settings || {}), b.notes || ""];
-    if (b.id) await env.DB.prepare("UPDATE doctors SET name=?,cabinet=?,phone=?,max_devices=?,expires=?,status=?,version=?,settings=?,notes=? WHERE id=?").bind(...f, b.id).run();
-    else await env.DB.prepare("INSERT INTO doctors(name,cabinet,phone,max_devices,expires,status,version,settings,notes,license_key,created) VALUES(?,?,?,?,?,?,?,?,?,?,?)").bind(...f, newKey(), now()).run();
+    const f = [b.name || "", b.cabinet || "", b.phone || "", +b.max_devices || 1, b.expires || "", b.status || "active", b.version || "", JSON.stringify(b.settings || {}), b.notes || "", b.offline_days === "" || b.offline_days == null ? OFFLINE_DAYS : +b.offline_days];
+    if (b.id) await env.DB.prepare("UPDATE doctors SET name=?,cabinet=?,phone=?,max_devices=?,expires=?,status=?,version=?,settings=?,notes=?,offline_days=? WHERE id=?").bind(...f, b.id).run();
+    else await env.DB.prepare("INSERT INTO doctors(name,cabinet,phone,max_devices,expires,status,version,settings,notes,offline_days,license_key,created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)").bind(...f, newKey(), now()).run();
     return json({ ok: true });
   }
   if (path === "/api/admin/doctor/delete" && m === "POST") {
@@ -178,10 +180,35 @@ async function serveApp(env, key) {
   const want = d.version && list.find((v) => v.version === d.version) ? d.version : list[0]?.version;
   if (!want) return new Response("No version published", { status: 404 });
   const up = await env.DB.prepare("SELECT html FROM versions WHERE version=?").bind(want).first();
-  if (up) return html(up.html);
-  const a = await env.ASSETS.fetch("https://assets/" + encodeURIComponent(want) + ".html");
-  return a.ok ? html(await a.text()) : new Response("Version file missing", { status: 404 });
+  let page = up?.html;
+  if (!page) { const a = await env.ASSETS.fetch("https://assets/" + encodeURIComponent(want) + ".html"); if (a.ok) page = await a.text(); }
+  if (!page) return new Response("Version file missing", { status: 404 });
+  return html(installable(page, key.toUpperCase()));
 }
+// adds "install as an app" support: manifest + service worker (opens offline)
+function installable(page, key) {
+  return page
+    .replace(/(Content-Security-Policy" content="[^"]*?)("|$)/, "$1; manifest-src 'self'; worker-src 'self'$2")
+    .replace("img-src data: blob:", "img-src 'self' data: blob:")
+    .replace("</head>", `<link rel="manifest" href="/app/manifest/${encodeURIComponent(key)}.webmanifest"><meta name="theme-color" content="#0f7b5f"></head>`)
+    .replace(/<\/body>(?![\s\S]*<\/body>)/, `<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("/app/sw.js",{scope:"/app/"}).catch(()=>{});</script></body>`);
+}
+function manifest(key) {
+  return new Response(JSON.stringify({ name: "Tbibi طبيبي", short_name: "Tbibi", start_url: "/app/" + key, scope: "/app/", display: "standalone",
+    background_color: "#0d2a22", theme_color: "#0f7b5f", lang: "fr",
+    icons: [{ src: "/app/icon-192.png", sizes: "192x192", type: "image/png" }, { src: "/app/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }] }),
+    { headers: { "content-type": "application/manifest+json" } });
+}
+// network first (so updates and version changes arrive), saved copy when offline
+const SW = `const C="tbibi-app";
+self.addEventListener("install",()=>self.skipWaiting());
+self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));
+self.addEventListener("fetch",e=>{const u=new URL(e.request.url);
+ if(e.request.method!=="GET"||u.origin!==location.origin||!u.pathname.startsWith("/app/"))return;
+ const net=fetch(e.request).then(r=>{if(r.ok){const c=r.clone();caches.open(C).then(x=>x.put(u.pathname,c))}return r});
+ const timeout=new Promise((_,no)=>setTimeout(no,6000));
+ e.respondWith(Promise.race([net,timeout]).catch(()=>caches.match(u.pathname).then(r=>r||net)));
+});`;
 
 export default {
   async fetch(req, env) {
@@ -193,6 +220,9 @@ export default {
       if (p === "/api/pubkey") return json((await keys(env)).pub);
       if (p.startsWith("/api/admin")) return await admin(env, req, p);
       if (/^\/(app\/)?attente(\.html)?$/.test(p) && env.ASSETS) return html(await (await env.ASSETS.fetch("https://assets/attente.html")).text());
+      if (p === "/app/sw.js") return new Response(SW, { headers: { "content-type": "text/javascript", "cache-control": "no-cache", "service-worker-allowed": "/app/" } });
+      if (/^\/app\/icon-(192|512)\.png$/.test(p)) return env.ASSETS.fetch("https://assets/" + p.slice(5));
+      if (p.startsWith("/app/manifest/")) return manifest(encodeURIComponent(decodeURIComponent(p.slice(14).replace(/\.webmanifest$/, ""))));
       if (p.startsWith("/app/")) return await serveApp(env, decodeURIComponent(p.slice(5)));
       if (p === "/admin" || p === "/") return new Response(ADMIN_HTML, { headers: { "content-type": "text/html; charset=utf-8", "x-frame-options": "DENY" } });
       return new Response("Not found", { status: 404 });
@@ -246,7 +276,7 @@ function draw(){
    return\`<tr class="click" onclick="edit(\${d.id})"><td><b>\${esc(d.name)}</b><div class="mut">\${esc(d.cabinet)}</div></td><td><code onclick="event.stopPropagation()">\${d.license_key}</code><div class="mut"><a href="/app/\${d.license_key}" target="_blank" onclick="event.stopPropagation()">open app</a> · <a href="#" onclick="event.stopPropagation();navigator.clipboard.writeText(location.origin+'/app/\${d.license_key}');this.textContent='copied';return false">copy link</a></div></td>
    <td>\${dv.filter(x=>!x.blocked).length} / \${d.max_devices}</td><td>\${esc(d.version||"latest")}</td><td>\${last?ago(last.last_seen)+'<div class="mut">v'+esc(last.app_version)+"</div>":'<span class="mut">never</span>'}</td>
    <td>\${st.patients??"—"}<div class="mut">\${st.visits!=null?st.visits+" visits":""}</div></td>
-   <td>\${d.status!=="active"?'<span class="pill red">blocked</span>':exp?'<span class="pill red">expired</span>':'<span class="pill">active</span>'}<div class="mut">\${d.expires?"→ "+d.expires:"no limit"}</div></td></tr>\`}).join("")||'<tr><td colspan="7" class="mut">No doctors yet. Click "New doctor".</td></tr>'}
+   <td>\${d.status!=="active"?'<span class="pill red">blocked</span>':exp?'<span class="pill red">expired</span>':'<span class="pill">active</span>'}<div class="mut">\${d.expires?"→ "+d.expires:"no limit"} · \${d.offline_days===0?"no internet":"check "+(d.offline_days??14)+" d"}</div></td></tr>\`}).join("")||'<tr><td colspan="7" class="mut">No doctors yet. Click "New doctor".</td></tr>'}
   </tbody></table></div>
   <div class="card"><h3>App versions <button class="right" onclick="upVer()">+ Publish a version</button></h3>
   <table><thead><tr><th>Version</th><th>Notes</th><th>Published</th><th>Size</th><th>Doctors</th><th></th></tr></thead><tbody>
@@ -254,7 +284,7 @@ function draw(){
   </tbody></table></div></main>\`;
 }
 function edit(id){
-  const d=id?D.doctors.find(x=>x.id===id):{name:"",cabinet:"",phone:"",max_devices:1,expires:"",status:"active",version:"",settings:"{}",notes:""};
+  const d=id?D.doctors.find(x=>x.id===id):{name:"",cabinet:"",phone:"",max_devices:1,expires:"",status:"active",version:"",settings:"{}",notes:"",offline_days:14};
   const s=JSON.parse(d.settings||"{}"),doc=s.doctor||{},off=s.off||[];
   const f=(k,l,v,c="",t="text")=>\`<label class="\${c}">\${l}<input id="f_\${k}" type="\${t}" value="\${esc(v)}"></label>\`;
   const dv=id?D.devices.filter(x=>x.doctor_id===id):[];
@@ -264,7 +294,9 @@ function edit(id){
   \${f("max_devices","Allowed devices",d.max_devices,"","number")}\${f("expires","Expires on (empty = never)",d.expires,"","date")}
   <label>Status<select id="f_status"><option value="active">Active</option><option value="blocked" \${d.status!=="active"?"selected":""}>Blocked</option></select></label>
   <label>Version<select id="f_version"><option value="">Always the latest</option>\${D.versions.map(v=>\`<option \${d.version===v.version?"selected":""}>\${esc(v.version)}</option>\`).join("")}</select></label>
+  <label>License check<select id="f_offline_days">\${[[7,"Every week (7 days offline max)"],[14,"Every 2 weeks (14 days)"],[30,"Every month (30 days)"],[90,"Every 3 months (90 days)"],[0,"Never — no internet at this clinic"]].map(([n,l])=>\`<option value="\${n}" \${(d.offline_days??14)==n?"selected":""}>\${l}</option>\`).join("")}</select></label>
   \${f("notes","Notes (private)",d.notes,"c2")}</div>
+  <p class="mut">License check: how long the app keeps working without reaching your server. Blocking a license or changing settings only reaches the doctor at his next check-in. With "Never", blocking and settings changes only apply when his computer happens to be online; the expiry date still applies.</p>
   <h4>Clinic settings <span class="mut">(applied at the app's next check-in)</span></h4><div class="grid">
   \${f("dname","Displayed name",doc.name||"")}\${f("spe","Specialty",doc.spe||"")}\${f("dphone","Clinic phone",doc.phone||"")}
   \${f("addr","Address",doc.addr||"","c2")}\${f("city","City",doc.city||"")}\${f("hours","Opening hours",doc.hours||"","c2")}\${f("cnam","CNAM code",doc.cnam||"")}</div>
@@ -275,7 +307,7 @@ function edit(id){
   m.querySelector("#cl").onclick=()=>m.remove();
   m.querySelector("#ok").onclick=async()=>{
     const settings={doctor:Object.fromEntries([["name","dname"],["spe","spe"],["phone","dphone"],["addr","addr"],["city","city"],["hours","hours"],["cnam","cnam"]].map(([a,b])=>[a,v(b)]).filter(x=>x[1])),off:[...m.querySelectorAll("[data-feat]")].filter(x=>!x.checked).map(x=>x.dataset.feat)};
-    await api("doctor",{id,name:v("name"),cabinet:v("cabinet"),phone:v("phone"),max_devices:v("max_devices"),expires:v("expires"),status:v("status"),version:v("version"),notes:v("notes"),settings});m.remove();load()};
+    await api("doctor",{id,name:v("name"),cabinet:v("cabinet"),phone:v("phone"),max_devices:v("max_devices"),expires:v("expires"),status:v("status"),version:v("version"),notes:v("notes"),offline_days:v("offline_days"),settings});m.remove();load()};
   id&&(m.querySelector("#del").onclick=async()=>{if(confirm("Delete this doctor and their license?")){await api("doctor/delete",{id});m.remove();load()}});
 }
 window.devAct=async(id,action)=>{if(action==="remove"&&!confirm("Remove this device? It will need to be activated again."))return;await api("device",{id,action});document.querySelector(".modal")?.remove();await load()};

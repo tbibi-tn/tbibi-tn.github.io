@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ## [Unreleased]
 
 ### Added
+- **Install as an app**: each doctor's link can be installed (desktop icon) and opens without internet.
+- **License check interval per doctor** (weekly, every 2 weeks, monthly, every 3 months, or never for clinics without internet). The expiry date is enforced even offline.
+- A new installation **starts empty** (medication list kept).
 - **License**: the app asks for a license key on first start, checks in with the license server about once a day, keeps working 14 days offline, limits the number of computers, and applies the clinic settings and enabled features chosen in the admin dashboard. Only the key, a device id, the app version and counts are sent — never patient data.
 
 ### Removed
