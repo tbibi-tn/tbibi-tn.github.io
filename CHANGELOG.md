@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+- **License**: the app asks for a license key on first start, checks in with the license server about once a day, keeps working 14 days offline, limits the number of computers, and applies the clinic settings and enabled features chosen in the admin dashboard. Only the key, a device id, the app version and counts are sent — never patient data.
+
 ### Removed
 - **Prescription templates** page (« Modèles d'ordonnance »), with the template picker and « save as template » button in the consultation screen. Not needed by the doctor. « Renew last prescription » stays.
 

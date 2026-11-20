@@ -12,6 +12,7 @@ export const MODULES = [
   "ui/components.js",
   "core/storage.js",
   "core/security.js",
+  "core/license.js",
   "ui/shell.js",
   // screens
   "views/search.js",
