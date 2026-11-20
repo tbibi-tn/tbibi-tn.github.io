@@ -14,7 +14,7 @@ function shell(){
   <div class="app">
    <aside class="side" id="side">
     <div class="brand">${brandHTML()}</div>
-    ${NAV.map(n=>n[0]==="sep"?`<div class="sep"></div>${n[1]?`<div class="grp-l">${t(n[1])}</div>`:""}`:`<button class="nav ${r===n[0]?"on":""}" data-go="${n[0]}">${I(n[1])}<span>${t("nav_"+n[0])}</span>${n[0]==="today"&&waiting?`<span class="badge">${waiting}</span>`:""}</button>`).join("")}
+    ${NAV.filter(n=>!licOff(n[0])).map(n=>n[0]==="sep"?`<div class="sep"></div>${n[1]?`<div class="grp-l">${t(n[1])}</div>`:""}`:`<button class="nav ${r===n[0]?"on":""}" data-go="${n[0]}">${I(n[1])}<span>${t("nav_"+n[0])}</span>${n[0]==="today"&&waiting?`<span class="badge">${waiting}</span>`:""}</button>`).join("")}
     <div class="foot"><div class="avatar">${esc((S.settings.doctor.name.replace(/^Dr\.?\s*/i,"")[0]||"D").toUpperCase())}</div><div><b>${esc(S.settings.doctor.name)}</b>${esc(S.settings.doctor.spe)}</div></div>
    </aside>
    <div class="main">
@@ -36,7 +36,7 @@ function render(){
   if(UI.route[0]==="ecran"){vScreen();return}
   shell();
   const r=UI.route[0],pg=$("#page");
-  const V={today:vToday,journal:vJournal,patients:vPatients,patient:vPatient,agenda:vAgenda,meds:vMeds,stats:vStats,settings:vSettings}[r]||vToday;
+  const V={today:vToday,journal:vJournal,patients:vPatients,patient:vPatient,agenda:vAgenda,meds:vMeds,stats:vStats,settings:vSettings}[licOff(r)?"today":r]||vToday;
   V(pg);
   draftBanner(pg);
 }
