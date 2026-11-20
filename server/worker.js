@@ -110,10 +110,10 @@ async function admin(env, req, path) {
   if (path === "/api/admin/status") return json({ setup: !(await cfg(env, "admin_hash")), logged: await isAdmin(env, req) });
   if (path === "/api/admin/login" && m === "POST") {
     const { password } = await req.json().catch(() => ({}));
-    if (!password || password.length < 8) return json({ ok: false, error: "Mot de passe: 8 caractères minimum" }, 400);
+    if (!password || password.length < 8) return json({ ok: false, error: "Password: 8 characters minimum" }, 400);
     const h = await cfg(env, "admin_hash");
     if (!h) { const salt = b64(crypto.getRandomValues(new Uint8Array(16))); await setCfg(env, "admin_salt", salt); await setCfg(env, "admin_hash", await hashPw(password, salt)); }
-    else if ((await hashPw(password, await cfg(env, "admin_salt"))) !== h) { await new Promise((r) => setTimeout(r, 800)); return json({ ok: false, error: "Mot de passe incorrect" }, 403); }
+    else if ((await hashPw(password, await cfg(env, "admin_salt"))) !== h) { await new Promise((r) => setTimeout(r, 800)); return json({ ok: false, error: "Wrong password" }, 403); }
     return json({ ok: true }, 200, { "set-cookie": await sessionCookie(env) });
   }
   if (path === "/api/admin/logout") return json({ ok: true }, 200, { "set-cookie": "tb_admin=; Path=/; Max-Age=0" });
@@ -145,7 +145,7 @@ async function admin(env, req, path) {
   }
   if (path === "/api/admin/version" && m === "POST") {
     const b = await req.json();
-    if (!/^[\w.\-]{1,20}$/.test(b.version || "") || !b.html) return json({ ok: false, error: "version + fichier requis" }, 400);
+    if (!/^[\w.\-]{1,20}$/.test(b.version || "") || !b.html) return json({ ok: false, error: "version + file required" }, 400);
     await env.DB.prepare("INSERT OR REPLACE INTO versions(version,notes,html,created) VALUES(?,?,?,?)").bind(b.version, b.notes || "", b.html, now()).run();
     return json({ ok: true });
   }
@@ -160,11 +160,11 @@ async function admin(env, req, path) {
 // ---- serve the app version assigned to a license ----
 async function serveApp(env, key) {
   const d = await env.DB.prepare("SELECT version,status FROM doctors WHERE license_key=?").bind(key.toUpperCase()).first();
-  if (!d || d.status !== "active") return new Response("Licence invalide", { status: 403 });
+  if (!d || d.status !== "active") return new Response("Invalid license", { status: 403 });
   const v = d.version
     ? await env.DB.prepare("SELECT html FROM versions WHERE version=?").bind(d.version).first()
     : await env.DB.prepare("SELECT html FROM versions ORDER BY created DESC LIMIT 1").first();
-  if (!v) return new Response("Aucune version publiée", { status: 404 });
+  if (!v) return new Response("No version published", { status: 404 });
   return new Response(v.html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache" } });
 }
 
@@ -186,7 +186,7 @@ export default {
   },
 };
 
-const ADMIN_HTML = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tbibi — Admin</title>
+const ADMIN_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tbibi — Admin</title>
 <style>
 :root{--pri:#0f7b5f;--bg:#f4f7f6;--line:#dde7e3;--mut:#5c7a70;--red:#c0392b;--amb:#b7791f}
 *{box-sizing:border-box}body{margin:0;font:14px system-ui,Segoe UI,sans-serif;background:var(--bg);color:#16302a}
@@ -209,13 +209,13 @@ label{display:block;font-size:12px;color:var(--mut);margin-bottom:10px}label>*{m
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 const api=async(p,b)=>{const r=await fetch("/api/admin/"+p,b?{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(b)}:{});const d=await r.json();if(r.status===401){boot();throw 0}if(!d.ok&&d.error&&!d.doctors)alert(d.error);return d};
-const FEATS=[["agenda","Agenda"],["journal","Journal"],["meds","Médicaments"],["stats","Statistiques"],["queue","Salle d'attente / QR"],["security","Chiffrement"]];
-const ago=t=>{if(!t)return"jamais";const m=(Date.now()-new Date(t))/6e4;return m<60?Math.round(m)+" min":m<1440?Math.round(m/60)+" h":Math.round(m/1440)+" j"};
+const FEATS=[["agenda","Agenda"],["journal","Journal"],["meds","Medications"],["stats","Statistics"],["queue","Waiting room / QR"],["security","Encryption"]];
+const ago=t=>{if(!t)return"never";const m=(Date.now()-new Date(t))/6e4;return m<60?Math.round(m)+" min":m<1440?Math.round(m/60)+" h":Math.round(m/1440)+" d"};
 let D={doctors:[],devices:[],versions:[]};
 async function boot(){
   const s=await (await fetch("/api/admin/status")).json();
   if(s.logged)return load();
-  $("#root").innerHTML=\`<div id="login" class="card" style="padding:20px"><h2 style="margin-top:0;color:var(--pri)">Tbibi — Admin</h2><p class="mut">\${s.setup?"Première connexion : choisissez votre mot de passe administrateur (8 caractères minimum).":"Connectez-vous."}</p><label>Mot de passe<input type="password" id="pw" autocomplete="\${s.setup?"new-password":"current-password"}"></label><div class="err" id="er"></div><button class="pri" id="go">\${s.setup?"Créer et entrer":"Entrer"}</button></div>\`;
+  $("#root").innerHTML=\`<div id="login" class="card" style="padding:20px"><h2 style="margin-top:0;color:var(--pri)">Tbibi — Admin</h2><p class="mut">\${s.setup?"First login: choose your admin password (8 characters minimum).":"Sign in."}</p><label>Password<input type="password" id="pw" autocomplete="\${s.setup?"new-password":"current-password"}"></label><div class="err" id="er"></div><button class="pri" id="go">\${s.setup?"Create and sign in":"Sign in"}</button></div>\`;
   const go=async()=>{const r=await fetch("/api/admin/login",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({password:$("#pw").value})});const d=await r.json();d.ok?load():$("#er").textContent=d.error};
   $("#go").onclick=go;$("#pw").onkeydown=e=>e.key==="Enter"&&go();$("#pw").focus();
 }
@@ -223,18 +223,18 @@ async function load(){D=await api("data");draw()}
 function draw(){
   const devs=id=>D.devices.filter(x=>x.doctor_id===id);
   const today=new Date().toISOString().slice(0,10);
-  $("#root").innerHTML=\`<header><b>Tbibi</b><span class="mut">Administration des licences</span><button class="right" onclick="fetch('/api/admin/logout').then(boot)">Déconnexion</button></header><main>
-  <div class="card"><h3>Médecins <span class="pill">\${D.doctors.length}</span><button class="pri right" onclick="edit()">+ Nouveau médecin</button></h3>
-  <table><thead><tr><th>Médecin / cabinet</th><th>Clé de licence</th><th>Appareils</th><th>Version</th><th>Dernière activité</th><th>Patients</th><th>Licence</th></tr></thead><tbody>
+  $("#root").innerHTML=\`<header><b>Tbibi</b><span class="mut">License administration</span><button class="right" onclick="fetch('/api/admin/logout').then(boot)">Sign out</button></header><main>
+  <div class="card"><h3>Doctors <span class="pill">\${D.doctors.length}</span><button class="pri right" onclick="edit()">+ New doctor</button></h3>
+  <table><thead><tr><th>Doctor / clinic</th><th>License key</th><th>Devices</th><th>Version</th><th>Last activity</th><th>Patients</th><th>License</th></tr></thead><tbody>
   \${D.doctors.map(d=>{const dv=devs(d.id),last=dv[0],st=JSON.parse(last?.stats||"{}"),exp=d.expires&&d.expires<today;
    return\`<tr class="click" onclick="edit(\${d.id})"><td><b>\${esc(d.name)}</b><div class="mut">\${esc(d.cabinet)}</div></td><td><code onclick="event.stopPropagation()">\${d.license_key}</code></td>
-   <td>\${dv.filter(x=>!x.blocked).length} / \${d.max_devices}</td><td>\${esc(d.version||"dernière")}</td><td>\${last?ago(last.last_seen)+'<div class="mut">v'+esc(last.app_version)+"</div>":'<span class="mut">jamais</span>'}</td>
-   <td>\${st.patients??"—"}<div class="mut">\${st.visits!=null?st.visits+" consult.":""}</div></td>
-   <td>\${d.status!=="active"?'<span class="pill red">bloquée</span>':exp?'<span class="pill red">expirée</span>':'<span class="pill">active</span>'}<div class="mut">\${d.expires?"→ "+d.expires:"sans limite"}</div></td></tr>\`}).join("")||'<tr><td colspan="7" class="mut">Aucun médecin. Cliquez « Nouveau médecin ».</td></tr>'}
+   <td>\${dv.filter(x=>!x.blocked).length} / \${d.max_devices}</td><td>\${esc(d.version||"latest")}</td><td>\${last?ago(last.last_seen)+'<div class="mut">v'+esc(last.app_version)+"</div>":'<span class="mut">never</span>'}</td>
+   <td>\${st.patients??"—"}<div class="mut">\${st.visits!=null?st.visits+" visits":""}</div></td>
+   <td>\${d.status!=="active"?'<span class="pill red">blocked</span>':exp?'<span class="pill red">expired</span>':'<span class="pill">active</span>'}<div class="mut">\${d.expires?"→ "+d.expires:"no limit"}</div></td></tr>\`}).join("")||'<tr><td colspan="7" class="mut">No doctors yet. Click "New doctor".</td></tr>'}
   </tbody></table></div>
-  <div class="card"><h3>Versions de l'application <button class="right" onclick="upVer()">+ Publier une version</button></h3>
-  <table><thead><tr><th>Version</th><th>Notes</th><th>Publiée</th><th>Taille</th><th>Médecins</th><th></th></tr></thead><tbody>
-  \${D.versions.map((v,i)=>\`<tr><td><b>\${esc(v.version)}</b> \${i===0?'<span class="pill">dernière</span>':""}</td><td>\${esc(v.notes)}</td><td>\${v.created.slice(0,10)}</td><td>\${Math.round(v.size/1024)} Ko</td><td>\${D.doctors.filter(d=>d.version===v.version||(!d.version&&i===0)).map(d=>esc(d.name)).join(", ")}</td><td><button class="red" onclick="delVer('\${esc(v.version)}')">Supprimer</button></td></tr>\`).join("")||'<tr><td colspan="6" class="mut">Aucune version publiée.</td></tr>'}
+  <div class="card"><h3>App versions <button class="right" onclick="upVer()">+ Publish a version</button></h3>
+  <table><thead><tr><th>Version</th><th>Notes</th><th>Published</th><th>Size</th><th>Doctors</th><th></th></tr></thead><tbody>
+  \${D.versions.map((v,i)=>\`<tr><td><b>\${esc(v.version)}</b> \${i===0?'<span class="pill">latest</span>':""}</td><td>\${esc(v.notes)}</td><td>\${v.created.slice(0,10)}</td><td>\${Math.round(v.size/1024)} KB</td><td>\${D.doctors.filter(d=>d.version===v.version||(!d.version&&i===0)).map(d=>esc(d.name)).join(", ")}</td><td><button class="red" onclick="delVer('\${esc(v.version)}')">Delete</button></td></tr>\`).join("")||'<tr><td colspan="6" class="mut">No version published.</td></tr>'}
   </tbody></table></div></main>\`;
 }
 function edit(id){
@@ -242,36 +242,36 @@ function edit(id){
   const s=JSON.parse(d.settings||"{}"),doc=s.doctor||{},off=s.off||[];
   const f=(k,l,v,c="",t="text")=>\`<label class="\${c}">\${l}<input id="f_\${k}" type="\${t}" value="\${esc(v)}"></label>\`;
   const dv=id?D.devices.filter(x=>x.doctor_id===id):[];
-  const m=document.createElement("div");m.className="modal";m.innerHTML=\`<div><h2 style="margin-top:0">\${id?esc(d.name):"Nouveau médecin"}</h2>
-  \${id?\`<p>Clé de licence : <code>\${d.license_key}</code></p>\`:""}
-  <h4>Licence</h4><div class="grid">\${f("name","Nom du médecin",d.name)}\${f("cabinet","Nom du cabinet",d.cabinet)}\${f("phone","Téléphone (contact)",d.phone)}
-  \${f("max_devices","Appareils autorisés",d.max_devices,"","number")}\${f("expires","Expire le (vide = jamais)",d.expires,"","date")}
-  <label>Statut<select id="f_status"><option value="active">Active</option><option value="blocked" \${d.status!=="active"?"selected":""}>Bloquée</option></select></label>
-  <label>Version<select id="f_version"><option value="">Toujours la dernière</option>\${D.versions.map(v=>\`<option \${d.version===v.version?"selected":""}>\${esc(v.version)}</option>\`).join("")}</select></label>
-  \${f("notes","Notes (privées)",d.notes,"c2")}</div>
-  <h4>Paramètres du cabinet <span class="mut">(appliqués à la prochaine connexion de l'app)</span></h4><div class="grid">
-  \${f("dname","Nom affiché",doc.name||"")}\${f("spe","Spécialité",doc.spe||"")}\${f("dphone","Téléphone du cabinet",doc.phone||"")}
-  \${f("addr","Adresse",doc.addr||"","c2")}\${f("city","Ville",doc.city||"")}\${f("hours","Horaires",doc.hours||"","c2")}\${f("cnam","Code CNAM",doc.cnam||"")}</div>
-  <label>Fonctions activées</label><div class="feat">\${FEATS.map(([k,l])=>\`<label><input type="checkbox" data-feat="\${k}" \${off.includes(k)?"":"checked"}>\${l}</label>\`).join("")}</div>
-  \${id?\`<h4>Appareils (\${dv.length})</h4><table><thead><tr><th>Appareil</th><th>Version</th><th>Première / dernière connexion</th><th>Données</th><th></th></tr></thead><tbody>\${dv.map(x=>{const st=JSON.parse(x.stats||"{}");return\`<tr><td>\${esc(x.label||x.device_id.slice(0,8))} \${x.blocked?'<span class="pill red">bloqué</span>':""}</td><td>v\${esc(x.app_version)}</td><td>\${x.first_seen.slice(0,10)} / \${ago(x.last_seen)}</td><td class="mut">\${st.patients??"?"} patients · \${st.visits??"?"} consult.\${st.backup?" · sauvegarde "+ago(st.backup):""}</td><td><button onclick="devAct(\${x.id},'\${x.blocked?"unblock":"block"}')">\${x.blocked?"Débloquer":"Bloquer"}</button> <button class="red" onclick="devAct(\${x.id},'remove')">Retirer</button></td></tr>\`}).join("")||'<tr><td colspan="5" class="mut">Aucun appareil activé.</td></tr>'}</tbody></table>\`:""}
-  <div style="display:flex;gap:8px;margin-top:16px">\${id?'<button class="red" id="del">Supprimer</button>':""}<span class="right"></span><button id="cl">Annuler</button><button class="pri" id="ok">Enregistrer</button></div></div>\`;
+  const m=document.createElement("div");m.className="modal";m.innerHTML=\`<div><h2 style="margin-top:0">\${id?esc(d.name):"New doctor"}</h2>
+  \${id?\`<p>License key: <code>\${d.license_key}</code></p>\`:""}
+  <h4>License</h4><div class="grid">\${f("name","Doctor name",d.name)}\${f("cabinet","Clinic name",d.cabinet)}\${f("phone","Phone (contact)",d.phone)}
+  \${f("max_devices","Allowed devices",d.max_devices,"","number")}\${f("expires","Expires on (empty = never)",d.expires,"","date")}
+  <label>Status<select id="f_status"><option value="active">Active</option><option value="blocked" \${d.status!=="active"?"selected":""}>Blocked</option></select></label>
+  <label>Version<select id="f_version"><option value="">Always the latest</option>\${D.versions.map(v=>\`<option \${d.version===v.version?"selected":""}>\${esc(v.version)}</option>\`).join("")}</select></label>
+  \${f("notes","Notes (private)",d.notes,"c2")}</div>
+  <h4>Clinic settings <span class="mut">(applied at the app's next check-in)</span></h4><div class="grid">
+  \${f("dname","Displayed name",doc.name||"")}\${f("spe","Specialty",doc.spe||"")}\${f("dphone","Clinic phone",doc.phone||"")}
+  \${f("addr","Address",doc.addr||"","c2")}\${f("city","City",doc.city||"")}\${f("hours","Opening hours",doc.hours||"","c2")}\${f("cnam","CNAM code",doc.cnam||"")}</div>
+  <label>Enabled features</label><div class="feat">\${FEATS.map(([k,l])=>\`<label><input type="checkbox" data-feat="\${k}" \${off.includes(k)?"":"checked"}>\${l}</label>\`).join("")}</div>
+  \${id?\`<h4>Devices (\${dv.length})</h4><table><thead><tr><th>Device</th><th>Version</th><th>First / last seen</th><th>Data</th><th></th></tr></thead><tbody>\${dv.map(x=>{const st=JSON.parse(x.stats||"{}");return\`<tr><td>\${esc(x.label||x.device_id.slice(0,8))} \${x.blocked?'<span class="pill red">blocked</span>':""}</td><td>v\${esc(x.app_version)}</td><td>\${x.first_seen.slice(0,10)} / \${ago(x.last_seen)}</td><td class="mut">\${st.patients??"?"} patients · \${st.visits??"?"} consult.\${st.backup?" · backup "+ago(st.backup):""}</td><td><button onclick="devAct(\${x.id},'\${x.blocked?"unblock":"block"}')">\${x.blocked?"Unblock":"Block"}</button> <button class="red" onclick="devAct(\${x.id},'remove')">Remove</button></td></tr>\`}).join("")||'<tr><td colspan="5" class="mut">No device activated.</td></tr>'}</tbody></table>\`:""}
+  <div style="display:flex;gap:8px;margin-top:16px">\${id?'<button class="red" id="del">Delete</button>':""}<span class="right"></span><button id="cl">Cancel</button><button class="pri" id="ok">Save</button></div></div>\`;
   document.body.append(m);const v=k=>m.querySelector("#f_"+k).value.trim();
   m.querySelector("#cl").onclick=()=>m.remove();
   m.querySelector("#ok").onclick=async()=>{
     const settings={doctor:Object.fromEntries([["name","dname"],["spe","spe"],["phone","dphone"],["addr","addr"],["city","city"],["hours","hours"],["cnam","cnam"]].map(([a,b])=>[a,v(b)]).filter(x=>x[1])),off:[...m.querySelectorAll("[data-feat]")].filter(x=>!x.checked).map(x=>x.dataset.feat)};
     await api("doctor",{id,name:v("name"),cabinet:v("cabinet"),phone:v("phone"),max_devices:v("max_devices"),expires:v("expires"),status:v("status"),version:v("version"),notes:v("notes"),settings});m.remove();load()};
-  id&&(m.querySelector("#del").onclick=async()=>{if(confirm("Supprimer ce médecin et sa licence ?")){await api("doctor/delete",{id});m.remove();load()}});
+  id&&(m.querySelector("#del").onclick=async()=>{if(confirm("Delete this doctor and their license?")){await api("doctor/delete",{id});m.remove();load()}});
 }
-window.devAct=async(id,action)=>{if(action==="remove"&&!confirm("Retirer cet appareil ? Il devra être réactivé."))return;await api("device",{id,action});document.querySelector(".modal")?.remove();await load()};
+window.devAct=async(id,action)=>{if(action==="remove"&&!confirm("Remove this device? It will need to be activated again."))return;await api("device",{id,action});document.querySelector(".modal")?.remove();await load()};
 function upVer(){
-  const m=document.createElement("div");m.className="modal";m.innerHTML=\`<div><h2 style="margin-top:0">Publier une version</h2><p class="mut">Choisissez le fichier <b>dist/tbibi.html</b> construit avec <code>npm run build</code>.</p>
-  <label>Numéro de version<input id="vv" placeholder="1.5.0"></label><label>Notes<input id="vn" placeholder="Ce qui change"></label><label>Fichier<input type="file" id="vf" accept=".html"></label>
-  <div style="display:flex;gap:8px"><span class="right"></span><button id="cl">Annuler</button><button class="pri" id="ok">Publier</button></div></div>\`;
+  const m=document.createElement("div");m.className="modal";m.innerHTML=\`<div><h2 style="margin-top:0">Publish a version</h2><p class="mut">Choose the file <b>dist/tbibi.html</b> built with <code>npm run build</code>.</p>
+  <label>Version number<input id="vv" placeholder="1.5.0"></label><label>Notes<input id="vn" placeholder="What changed"></label><label>File<input type="file" id="vf" accept=".html"></label>
+  <div style="display:flex;gap:8px"><span class="right"></span><button id="cl">Cancel</button><button class="pri" id="ok">Publish</button></div></div>\`;
   document.body.append(m);m.querySelector("#cl").onclick=()=>m.remove();
   m.querySelector("#vf").onchange=e=>{const mt=(e.target.files[0]?.name||"");};
   m.querySelector("#ok").onclick=async()=>{const f=m.querySelector("#vf").files[0];if(!f)return;const html=await f.text();const auto=(html.match(/Tbibi v([\\w.\\-]+)/)||[])[1];
     const r=await api("version",{version:m.querySelector("#vv").value.trim()||auto,notes:m.querySelector("#vn").value,html});if(r.ok){m.remove();load()}};
 }
-window.delVer=async v=>{if(confirm("Supprimer la version "+v+" ?")){await api("version/delete",{version:v});load()}};
+window.delVer=async v=>{if(confirm("Delete version "+v+" ?")){await api("version/delete",{version:v});load()}};
 boot();
 </script></body></html>`;
